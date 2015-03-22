@@ -140,6 +140,17 @@ int gpu_context_t::gralloc_alloc_buffer(size_t size, int usage,
             flags |= private_handle_t::PRIV_FLAGS_SECURE_DISPLAY;
         }
 
+        if (usage & (GRALLOC_USAGE_HW_VIDEO_ENCODER |
+                GRALLOC_USAGE_HW_CAMERA_WRITE |
+                GRALLOC_USAGE_HW_RENDER |
+                GRALLOC_USAGE_HW_FB)) {
+            flags |= private_handle_t::PRIV_FLAGS_NON_CPU_WRITER;
+        }
+
+        if(false == data.uncached) {
+            flags |= private_handle_t::PRIV_FLAGS_CACHED;
+        }
+
         flags |= data.allocType;
         int eBaseAddr = int(eData.base) + eData.offset;
         private_handle_t *hnd = new private_handle_t(data.fd, size, flags,
@@ -255,7 +266,8 @@ int gpu_context_t::alloc_impl(int w, int h, int format, int usage,
 
     //If input format is HAL_PIXEL_FORMAT_IMPLEMENTATION_DEFINED then based on
     //the usage bits, gralloc assigns a format.
-    if(format == HAL_PIXEL_FORMAT_IMPLEMENTATION_DEFINED) {
+    if(format == HAL_PIXEL_FORMAT_IMPLEMENTATION_DEFINED ||
+       format == HAL_PIXEL_FORMAT_YCbCr_420_888) {
         if(usage & GRALLOC_USAGE_HW_VIDEO_ENCODER)
             grallocFormat = HAL_PIXEL_FORMAT_NV12_ENCODEABLE; //NV12
         else if((usage & GRALLOC_USAGE_HW_CAMERA_MASK)
